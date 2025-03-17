@@ -47,6 +47,7 @@ export const loginController = async (req, res) => {
 
         const token = await user.generateJWT();
         const { email: userEmail, _id } = user;
+        // console.log({_id})
         res.status(200).json({ user: { email: userEmail, _id: _id.toString() }, token });
 
     } catch(error){
@@ -71,6 +72,17 @@ export const logoutController = async(req, res) => {
             message: 'Logged out successfully'
         })
 
+    } catch(error){
+        res.status(400).send(error.message)
+    }
+}
+
+
+export const getAllUsersController = async(req, res) => {
+    try{
+        const loggedInUser = await userModel.findOne({email: req.user.email});
+        const users = await userService.getAllUser({userId: loggedInUser._id});
+        res.status(200).json({users})
     } catch(error){
         res.status(400).send(error.message)
     }

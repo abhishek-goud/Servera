@@ -6,7 +6,7 @@ const projectSchema = new mongoose.Schema({
         lowercase: true,
         required: true,
         trim: true,
-        unique: true
+        unique: [ true, 'Project name must be unique' ],
     },
 
     users: [
@@ -17,6 +17,8 @@ const projectSchema = new mongoose.Schema({
     ]
 })
 
-const Project = mongoose.model('Project', projectSchema);
+const Project = mongoose.model('project', projectSchema);
+
+Project.createIndexes();
 
 export default Project;

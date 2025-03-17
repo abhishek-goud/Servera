@@ -14,4 +14,14 @@ const createUser = async ({ email, password }) => {
   return user;
 };
 
-export default {createUser}
+const getAllUser = async ({userId}) => {
+  try{
+    const users = await userModel.find({_id : {$ne: userId}});
+    return users;
+    
+  } catch(error){
+    throw new Error(error.message);
+  }
+}
+
+export default {createUser, getAllUser}
