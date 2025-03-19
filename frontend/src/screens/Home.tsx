@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import axios from "@/config/axios";
 import { Project } from "@/types/projects";
 import { useNavigate } from "react-router";
+import { useUser } from "@/context/user.context";
 
 // Project icons array to randomly assign to projects
 const projectIcons = [Code, Database, GitBranch, Layout];
@@ -25,6 +26,7 @@ function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
+  // const {user} = useUser();
 
   // Fetch projects once when component mounts
   useEffect(() => {
@@ -41,6 +43,10 @@ function Home() {
         setIsLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    console.log({projects})
+  },[projects])
 
   // Create a new project and update state immediately
   const createProject = async (e: React.FormEvent) => {
