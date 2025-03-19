@@ -36,13 +36,13 @@ export const loginController = async (req, res) => {
         const user = await userModel.findOne({email}).select('+password');
 
         if(!user){
-            res.status(401).json({errors: 'Invalid Credentials'})
+            return res.status(401).json({errors: 'Invalid Credentials'})
         }
 
         const isMatch = await user.isValidPassword(password);
 
         if(!isMatch){
-            res.status(401).json({errors: 'Invalid Credentials'})
+           return  res.status(401).json({errors: 'Invalid Credentials'})
         }
 
         const token = await user.generateJWT();

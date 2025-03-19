@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import axios from "@/config/axios";
 import { ProjectDetails, User } from "@/types/projects";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { initializeSocket, sendMessage, receiveMessage } from "@/config/socket";
 import { useUser } from "@/context/user.context";
@@ -30,7 +31,7 @@ function ProjectContent() {
   const [project, setProject] = useState<ProjectDetails>();
   const [message, setMessage] = useState<string>("");
   const { user } = useUser();
-  
+  const messageBoxRef = useRef<HTMLDivElement>(null);
 
   const handleUserClick = (id: string) => {
     if (selectedUserId.includes(id)) {
@@ -58,9 +59,9 @@ function ProjectContent() {
   const send = () => {
     sendMessage("project-message", {
       message,
-      sender: user._id,
+      sender: { userId: user._id, email: user.email },
     });
-
+    appendOutgoingMessage();
     setMessage("");
   };
 
@@ -94,10 +95,80 @@ function ProjectContent() {
 
     receiveMessage("project-message", (data) => {
       console.log(data);
+      appendIncomingMessage(data);
     });
   }, [project]);
 
   // useEffect(()  => console.log(users), [users])
+
+  //   function appendIncomingMessage(messageObject: any) {
+
+  //     const messageBox = document.querySelector('.message-box')
+  //     const message = document.createElement('div')
+  //     message.classList.add('message', 'max-w-56', 'flex', 'flex-col', 'p-2', 'bg-slate-50', 'w-fit', 'rounded-md')
+  //     message.innerHTML = `
+  //             <small class='opacity-65 text-xs'>${messageObject.sender.email}</small>
+  //             <p class='text-sm'>${messageObject.message}</p>
+  //         `
+  //     messageBox?.appendChild(message)
+  //     // messageBoxRef?.current?.appendChild(message)
+
+  // }
+
+  function appendIncomingMessage(messageObject: any) {
+    if (!messageBoxRef.current) return; // Ensure ref is assigned
+
+    const message = document.createElement("div");
+
+    message.classList.add(
+      "message",
+      "max-w-56",
+      "flex",
+      "flex-col",
+      "p-2",
+      "bg-slate-50",
+      "w-fit",
+      "rounded-md",
+      "break-words" // ✅ Allow long words to wrap
+    );
+    message.innerHTML = `
+    <small class='opacity-65 text-xs'>${messageObject.sender.email}</small>
+    <p class='text-sm break-words'>${messageObject.message}</p> <!-- ✅ Fix applied here -->
+  `;
+
+    messageBoxRef.current.appendChild(message); // Use ref instead of querySelector
+  }
+
+  function appendOutgoingMessage() {
+    if (!messageBoxRef.current) return; // Ensure ref is assigned
+
+    const messageDiv = document.createElement("div");
+
+    messageDiv.classList.add(
+      "message",
+      "max-w-56",
+      "flex",
+      "flex-col",
+      "p-2",
+      "ml-auto",
+      "bg-slate-50",
+      "w-fit",
+      "rounded-md",
+      "break-words" // ✅ Ensures long words wrap properly
+    );
+    messageDiv.innerHTML = `
+    <small class='opacity-65 text-xs'>${user.email}</small>
+    <p class='text-sm break-words whitespace-normal'>${message}</p> 
+  `;
+
+    messageBoxRef.current.appendChild(messageDiv); // Use ref instead of querySelector
+  }
+
+  const scrollToBottom = () => {
+    if (messageBoxRef.current) {
+      messageBoxRef.current.scrollTop = messageBoxRef.current.scrollHeight;
+    }
+  };
 
   return (
     <main className="h-screen w-screen flex">
@@ -124,23 +195,13 @@ function ProjectContent() {
           </button>
         </header>
 
-        <div className="conversation-area flex grow flex-col">
-          <div className="message-box flex grow flex-col gap-1 p-1">
-            <div className="incoming message flex flex-col gap-1 p-2 bg-slate-50 w-full rounded-md max-w-56">
-              <small className="opacity-65 text-xs truncate">
-                example@gmail.com
-              </small>
-              <p className="text-sm break-words">hello</p>
-            </div>
+        <div className="conversation-area flex grow flex-col  pb-10 overflow-auto">
+          <div
+            className="message-box flex-grow flex flex-col gap-1 p-1 overflow-auto max-h-full"
+            ref={messageBoxRef}
+          ></div>
 
-            <div className="incoming message ml-auto flex flex-col gap-1 p-2 bg-slate-50 w-full rounded-md max-w-56">
-              <small className="opacity-65 text-xs truncate">
-                example@gmail.com
-              </small>
-              <p className="text-sm break-words">hello</p>
-            </div>
-          </div>
-          <div className="inputField w-full flex">
+          <div className="inputField w-full flex absolute bottom-0 pt-10">
             <input
               className="p-2 px-4 border-none outline-none bg-white grow"
               type="text"
