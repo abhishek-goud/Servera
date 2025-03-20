@@ -3,9 +3,19 @@
 import axios from "@/config/axios";
 import { ProjectDetails, User } from "@/types/projects";
 import { useEffect, useRef, useState } from "react";
+
+// Extend the Window interface to include hljs
+declare global {
+  interface Window {
+    hljs: {
+      highlightElement: (element: HTMLElement) => void;
+    };
+  }
+}
 import { useNavigate, useLocation } from "react-router";
 import { initializeSocket, sendMessage, receiveMessage } from "@/config/socket";
 import { useUser } from "@/context/user.context";
+import Markdown from "markdown-to-jsx";
 
 // const users = [
 //     { id: '1', _id: '1', email: 'user1@example.com' },
@@ -32,6 +42,9 @@ function ProjectContent() {
   const [message, setMessage] = useState<string>("");
   const { user } = useUser();
   const messageBoxRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState<
+    { sender: { userId: string; email: string }; message: string }[]
+  >([]); // New state variable for messages
 
   const handleUserClick = (id: string) => {
     if (selectedUserId.includes(id)) {
@@ -61,7 +74,11 @@ function ProjectContent() {
       message,
       sender: { userId: user._id, email: user.email },
     });
-    appendOutgoingMessage();
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { sender: { userId: user._id, email: user.email }, message },
+    ]); // Update messages state
+    // appendOutgoingMessage();
     setMessage("");
   };
 
@@ -95,11 +112,17 @@ function ProjectContent() {
 
     receiveMessage("project-message", (data) => {
       console.log(data);
-      appendIncomingMessage(data);
+      // appendIncomingMessage(data);
+      setMessages(prevMessages => [ ...prevMessages, data ]) // Update messages state
     });
   }, [project]);
 
-  // useEffect(()  => console.log(users), [users])
+  useEffect(() => {
+    console.log(messages)
+    scrollToBottom();
+  }, [messages])
+
+  useEffect(()  => console.log(users), [users])
 
   //   function appendIncomingMessage(messageObject: any) {
 
@@ -129,12 +152,24 @@ function ProjectContent() {
       "bg-slate-50",
       "w-fit",
       "rounded-md",
-      "break-words" // ✅ Allow long words to wrap
+      "break-words"
     );
-    message.innerHTML = `
-    <small class='opacity-65 text-xs'>${messageObject.sender.email}</small>
-    <p class='text-sm break-words'>${messageObject.message}</p> <!-- ✅ Fix applied here -->
-  `;
+    if (messageObject.sender.userId === "ai") {
+      const markDown = <Markdown>{messageObject.message}</Markdown>;
+      message.innerHTML = `
+        <small class='opacity-65 text-xs'>${messageObject.sender.email}</small>
+        <p class='text-sm break-words'>${markDown}</p> <!-- ✅ Fix applied here -->
+      `;
+    } else {
+      message.innerHTML = `
+        <small class='opacity-65 text-xs'>${messageObject.sender.email}</small>
+        <p class='text-sm break-words'>${messageObject.message}</p> <!-- ✅ Fix applied here -->
+      `;
+    }
+    //   message.innerHTML = `
+    //   <small class='opacity-65 text-xs'>${messageObject.sender.email}</small>
+    //   <p class='text-sm break-words'>${messageObject.message}</p> <!-- ✅ Fix applied here -->
+    // `;
 
     messageBoxRef.current.appendChild(message); // Use ref instead of querySelector
     scrollToBottom();
@@ -172,6 +207,21 @@ function ProjectContent() {
     }
   };
 
+  function SyntaxHighlightedCode(props: { className?: string; children?: React.ReactNode }) {
+    const ref = useRef<HTMLPreElement | null>(null);
+
+    useEffect(() => {
+      if (ref.current && props.className?.includes("lang-") && window.hljs) {
+        window.hljs.highlightElement(ref.current);
+
+        // hljs won't reprocess the element unless this attribute is removed
+        ref.current.removeAttribute("data-highlighted");
+      }
+    }, [props.className, props.children]);
+
+    return <code {...props} ref={ref} />;
+  }
+
   return (
     <main className="h-screen w-screen flex">
       <section className="left relative flex flex-col h-full min-w-96 bg-slate-300">
@@ -201,7 +251,36 @@ function ProjectContent() {
           <div
             className="message-box flex-grow flex flex-col gap-1 p-1 overflow-auto max-h-full"
             ref={messageBoxRef}
-          ></div>
+          >
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`${
+                  msg.sender.userId === "ai" ? "max-w-80" : "max-w-54"
+                } ${
+                  msg.sender.userId == user._id.toString() && "ml-auto"
+                }  message flex flex-col p-2 bg-slate-50 w-fit rounded-md`}
+              >
+                <small className="opacity-65 text-xs">{msg.sender.email}</small>
+                <div className="text-sm">
+                  {msg.sender.userId === "ai" ? (
+                    <div className="overflow-auto bg-slate-950 text-white rounded-sm p-2">
+                      <Markdown
+                        children={msg.message}
+                        options={{
+                          overrides: {
+                            code: SyntaxHighlightedCode,
+                          },
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    msg.message
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
 
           <div className="inputField w-full flex absolute bottom-0 pt-10">
             <input
