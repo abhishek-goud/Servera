@@ -137,6 +137,7 @@ function ProjectContent() {
   `;
 
     messageBoxRef.current.appendChild(message); // Use ref instead of querySelector
+    scrollToBottom();
   }
 
   function appendOutgoingMessage() {
@@ -162,6 +163,7 @@ function ProjectContent() {
   `;
 
     messageBoxRef.current.appendChild(messageDiv); // Use ref instead of querySelector
+    scrollToBottom();
   }
 
   const scrollToBottom = () => {

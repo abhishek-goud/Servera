@@ -6,6 +6,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import jwt from "jsonwebtoken"
 import mongoose from 'mongoose';
 import projectModel from './models/project.model.js';
+import * as aiService from './services/ai.service.js'
 
 const port = process.env.PORT;
 
@@ -43,12 +44,40 @@ io.on('connection', socket => {
     console.log("User connected")
     socket.join(socket.roomId)
     console.log("room id:",socket.roomId)
-    socket.on('project-message', data => {
+    socket.on('project-message', async (data) => {
         console.log(data)
+        const message = data.message;
+        // const aiIsPresentInMessage = message.includes('@ai');
+        const aiIsPresentInMessage = /(^|\s)(@ai|@AI)(\s|$)/.test(message);
+
+        if(aiIsPresentInMessage){
+            console.log("Ai is present in message")
+            // const prompt = message.replace('@ai', '');
+            const prompt = message.replace(/\b@ai\b|\b@AI\b/g, '');
+            const result = await aiService.generateResult(prompt);
+            // console.log({
+            //     message: result,
+            //     sender: {
+            //         userId: "ai",
+            //         email: "AI"
+            //     }})
+
+            io.to(socket.roomId).emit('project-message',{
+                message: result,
+                sender: {
+                    userId: "ai",
+                    email: "AI"
+                },
+            })
+            return;
+        }
         socket.broadcast.to(socket.roomId).emit('project-message', data)
     })
     socket.on('event', data => { /* … */ });
-    socket.on('disconnect', () => { /* … */ });
+    socket.on('disconnect', () => {
+        console.log('user disconnected');
+        socket.leave(socket.roomId)
+    });
 })
 
 
