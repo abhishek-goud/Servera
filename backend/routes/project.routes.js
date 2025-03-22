@@ -31,6 +31,12 @@ router.put(
   projectController.addUserToProjectController
 );
 
+router.put('/update-file-tree', authMiddleware.authUser, 
+  body('projectId').isString().withMessage('Project ID must be a string'),
+  body('fileTree').isObject().withMessage('File tree must be a string and not null/undefined'),
+  projectController.updateFileTreeController
+ )
+
 
 router.get("/get-projects/:projectId", authMiddleware.authUser, projectController.getProjectsByIdController);
 

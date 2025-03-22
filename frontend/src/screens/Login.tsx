@@ -6,7 +6,7 @@ import { useUser } from "@/context/user.context";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email format"),
-  password: z.string().min(3, "Password must be at least 3 characters"),
+  password: z.string().min(3, "Password must be at least 3 characters"),  // change it 6-8 char at deployment
 });
 
 const Login = () => {

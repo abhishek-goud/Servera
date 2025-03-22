@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import axios from "@/config/axios";
 import { Project } from "@/types/projects";
 import { useNavigate } from "react-router";
-import { useUser } from "@/context/user.context";
+
 
 // Project icons array to randomly assign to projects
 const projectIcons = [Code, Database, GitBranch, Layout];

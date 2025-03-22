@@ -3,6 +3,7 @@ export type Project  = {
     users: string[];
     _id: string;
     _v?: string | number;
+    fileTree: object
 }
 
 export type User  = {
